@@ -4,46 +4,36 @@ import axios from "axios";
 import Users from "./Users";
 import Nav from "./Nav";
 import store from "./store";
+import { Provider, connect } from "react-redux";
 
 console.log(store);
 
-class App extends Component {
+class _App extends Component {
   constructor() {
     super();
-    this.state = { ...store.getState(), view: "" }; //! get the current state from the store
-    // this.state = {
-    //   users: [],
-    //   loading: true
-    // };
+    this.state = { view: "" };
   }
   async componentDidMount() {
     window.addEventListener("hashchange", () => {
       this.setState({ view: window.location.hash.slice(1) });
     });
     this.setState({ view: window.location.hash.slice(1) });
-    const users = (await axios.get("/api/users")).data;
 
-    store.subscribe(() => {
-      //!when the store ends up changing, we're going to set the state for our application
-      this.setState(store.getState());
-    });
+    this.props.load(); //!will get called when App loads
 
-    store.dispatch({
-      // ! DISPATCHING TO THE STORE aka changes the action type
-      type: "LOAD_USERS",
-      users,
-    });
-    store.dispatch({
-      type: "LOADED",
-    });
-
-    // this.setState({
-    //   users: (await axios.get("/api/users")).data,
-    //   loading: false,
+    // const users = (await axios.get("/api/users")).data;
+    // store.dispatch({
+    //   // ! DISPATCHING TO THE STORE aka changes the action type
+    //   type: "LOAD_USERS",
+    //   users,
+    // });
+    // store.dispatch({
+    //   type: "LOADED",
     // });
   }
   render() {
-    const { loading, view } = this.state;
+    const { view } = this.state;
+    const { loading } = this.props;
     if (loading) {
       return "....loading";
     }
@@ -56,4 +46,37 @@ class App extends Component {
   }
 }
 
-render(<App />, document.querySelector("#root"));
+const mapStateToProps = ({ loading }) => {
+  return {
+    loading,
+  };
+}; //!THIS GETS CALLED FOR US, WE DONT CALL IT! a method that ends up getting passed the state as parameter and by returning the state, this would end up passing the state as props
+//!mapStateToProps always returns a plain object, our state is an object
+
+const mapDispatchToProps = (dispatch) => {
+  return {
+    load: async () => {
+      const users = (await axios.get("/api/users")).data;
+      dispatch({
+        // ! DISPATCHING TO THE STORE aka changes the action type
+        type: "LOAD_USERS",
+        users,
+      });
+      dispatch({
+        type: "LOADED",
+      });
+    },
+  };
+};
+
+const App = connect(mapStateToProps, mapDispatchToProps)(_App);
+
+render(
+  <Provider store={store}>
+    <App />{" "}
+  </Provider>,
+  document.querySelector("#root")
+);
+
+//! 1) once App is loaded, will go back to server, take a few seconds and come back to mapDispatchToProps
+//! 2) dipatch to store, state will end up changing (UNDER RENDER!!) not gonna end up being loaded anymore so it will render/loading the next component

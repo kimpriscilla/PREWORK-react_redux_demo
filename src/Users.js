@@ -1,34 +1,21 @@
 import React, { Component } from "react";
 import store from "./store";
+import { connect } from "react-redux";
 
-class Users extends React.Component {
-  constructor() {
-    super();
-    this.state = {
-      users: store.getState().users,
-    };
-  }
-  componentWillUnmount() {
-    this.unsubscribe();
-  }
-  componentDidMount() {
-    console.log(store.getState());
-    this.unsubscribe = store.subscribe(() => {
-      this.setState({
-        users: store.getState().users,
-      });
-    });
-  }
-  render() {
-    const { users } = this.state;
-    return (
-      <ul>
-        {users.map((user) => {
-          return <li key={user.id}>{user.name}</li>;
-        })}
-      </ul>
-    );
-  }
-}
+const Users = ({ users }) => {
+  return (
+    <ul>
+      {users.map((user) => {
+        return <li key={user.id}>{user.name}</li>;
+      })}
+    </ul>
+  );
+};
 
-export default Users;
+//!another way of doing mapStateToProps & connecting it
+export default connect(({ users }) => {
+  // deconstruct the state aka user and return it like mapStateToProps
+  return {
+    users,
+  };
+})(Users);
